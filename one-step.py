@@ -24,6 +24,8 @@ def create_dataset(dataset, look_back=1):
 		dataY.append(dataset[i + look_back, 0])
 	return numpy.array(dataX), numpy.array(dataY)
 
+# scale or not
+scale = True # False gives an error
 
 # fix random seed for reproducibility
 numpy.random.seed(7)
@@ -33,40 +35,57 @@ dataset = dataframe.values
 dataset = dataset.astype('float32')
 max_val, max_index = max(dataset), numpy.argmax(dataset)
 
-# they say LSTM works better with normalized data
-# normalize the dataset
-scaler = MinMaxScaler(feature_range=(0, 1))
-dataset = scaler.fit_transform(dataset)
-scaled_max_val = dataset[max_index]
-# IF WE WORK WITH THE NORMALIZED DATA, THE LARGEST VALUE OUR NN CAN PREDICT IS LIMITED, IN THIS CASE BY 622
+if scale:
+    # they say LSTM works better with normalized data
+    # normalize the dataset
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    dataset = scaler.fit_transform(dataset)
+    scaled_max_val = dataset[max_index]
+    # IF WE WORK WITH NORMALIZED DATA, THE LARGEST VALUE PREDICTED BY OUR NN IS LIMITED BY THE LAGEST VELUE IN THE DATASET,
+    # IN THIS CASE BY 622
+
 
 # split into train and test sets
+print('Data set has %d elements'%len(dataset))
 train_size = int(len(dataset) * 0.67)
 test_size = len(dataset) - train_size
 train, test = dataset[0:train_size,:], dataset[train_size:len(dataset),:]
 
 # reshape into X=t and Y=t+1
-# prediction is based only on the previous state (Markov model)
+# prediction is based only on the previous state (a Markov model)
 look_back = 1
 trainX, trainY = create_dataset(train, look_back)
 testX, testY = create_dataset(test, look_back)
 # reshape input to be [samples, time steps, features]
-trainX = numpy.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
-testX = numpy.reshape(testX, (testX.shape[0], 1, testX.shape[1]))
+# WHY 1 IN THE MIDDLE? DOCUMENTATION SAYS IT IS NOT
+time_steps = 1
+trainX = numpy.reshape(trainX, (trainX.shape[0], time_steps, trainX.shape[1]))
+testX = numpy.reshape(testX, (testX.shape[0], time_steps, testX.shape[1]))
 # create and fit the LSTM network
 model = Sequential()
-model.add(LSTM(4, input_shape=(1, look_back)))
-model.add(Dense(1))
+model.add(LSTM(1, input_shape=(1, look_back))) # number of hidden units is completely arbitrary
+
+'''
+# try stacking
+model.add(LSTM(32, return_sequences=True, input_shape=(time_steps, look_back)))
+model.add(LSTM(128))
+'''
+
+model.add(Dense(1)) # output is one number
+# (sigmoid results in much worse predictions)
+# (with relu it does not learn at all)
 model.compile(loss='mean_squared_error', optimizer='adam')
-model.fit(trainX, trainY, epochs=100, batch_size=1, verbose=2)
+model.fit(trainX, trainY, epochs=30, batch_size=1, verbose=2)
 # make predictions
 trainPredict = model.predict(trainX)
 testPredict = model.predict(testX)
-# invert predictions
-trainPredict = scaler.inverse_transform(trainPredict)
-trainY = scaler.inverse_transform([trainY])
-testPredict = scaler.inverse_transform(testPredict)
-testY = scaler.inverse_transform([testY])
+
+if scale:
+    # invert predictions
+    trainPredict = scaler.inverse_transform(trainPredict)
+    trainY = scaler.inverse_transform([trainY])
+    testPredict = scaler.inverse_transform(testPredict)
+    testY = scaler.inverse_transform([testY])
 # calculate root mean squared error
 trainScore = math.sqrt(mean_squared_error(trainY[0], trainPredict[:,0]))
 print('Train Score: %.2f RMSE' % (trainScore))
@@ -81,7 +100,8 @@ testPredictPlot = numpy.empty_like(dataset)
 testPredictPlot[:, :] = numpy.nan
 testPredictPlot[len(trainPredict)+(look_back*2)+1:len(dataset)-1, :] = testPredict
 # plot baseline and predictions
-plt.plot(scaler.inverse_transform(dataset))
-plt.plot(trainPredictPlot)
-plt.plot(testPredictPlot)
+plt.plot(scaler.inverse_transform(dataset), label='Data')
+plt.plot(trainPredictPlot, label='Predictions on training data')
+plt.plot(testPredictPlot, label='Predictions on testing data')
+plt.legend()
 plt.show()
