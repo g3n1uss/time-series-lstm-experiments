@@ -17,15 +17,16 @@ from sklearn.metrics import mean_squared_error
 
 # convert an array of values into a dataset matrix
 def create_dataset(dataset, look_back=1):
-	dataX, dataY = [], []
-	for i in range(len(dataset)-look_back-1):
-		a = dataset[i:(i+look_back), 0]
-		dataX.append(a)
-		dataY.append(dataset[i + look_back, 0])
-	return numpy.array(dataX), numpy.array(dataY)
+    dataX, dataY = [], []
+    for i in range(len(dataset) - look_back - 1):
+        a = dataset[i:(i + look_back), 0]
+        dataX.append(a)
+        dataY.append(dataset[i + look_back, 0])
+    return numpy.array(dataX), numpy.array(dataY)
+
 
 # scale or not
-scale = True # False gives an error
+scale = True  # False gives an error
 
 # fix random seed for reproducibility
 numpy.random.seed(7)
@@ -44,12 +45,13 @@ if scale:
     # IF WE WORK WITH NORMALIZED DATA, THE LARGEST VALUE PREDICTED BY OUR NN IS LIMITED BY THE LAGEST VELUE IN THE DATASET,
     # IN THIS CASE BY 622
 
-
 # split into train and test sets
-print('Data set has %d elements'%len(dataset))
+print('Data set has %d elements' % len(dataset))
 train_size = int(len(dataset) * 0.67)
 test_size = len(dataset) - train_size
-train, test = dataset[0:train_size,:], dataset[train_size:len(dataset),:]
+# THIS SPLIT IS NOT FAIR, IT SHOULD BE DONE RANDOMLY
+# BAD RESULTS FOR LARGER TIMES ARE OBTAINED BECAUSE THE MODEL IS NOT TRAINED ON LARGE VALUES
+train, test = dataset[0:train_size, :], dataset[train_size:len(dataset), :]
 
 # reshape into X=t and Y=t+1
 # prediction is based only on the previous state (a Markov model)
@@ -57,25 +59,43 @@ look_back = 1
 trainX, trainY = create_dataset(train, look_back)
 testX, testY = create_dataset(test, look_back)
 # reshape input to be [samples, time steps, features]
-# WHY 1 IN THE MIDDLE? DOCUMENTATION SAYS IT IS NOT
+# WHY 1 IN THE MIDDLE? DOCUMENTATION SAYS IT CAN BE SKIPPED
 time_steps = 1
 trainX = numpy.reshape(trainX, (trainX.shape[0], time_steps, trainX.shape[1]))
 testX = numpy.reshape(testX, (testX.shape[0], time_steps, testX.shape[1]))
 # create and fit the LSTM network
 model = Sequential()
-model.add(LSTM(1, input_shape=(1, look_back))) # number of hidden units is completely arbitrary
-
+model.add(LSTM(1, input_shape=(1, look_back)))  # number of hidden units is completely arbitrary
 '''
 # try stacking
 model.add(LSTM(32, return_sequences=True, input_shape=(time_steps, look_back)))
 model.add(LSTM(128))
 '''
-
-model.add(Dense(1)) # output is one number
+model.add(Dense(1))  # output is one number
 # (sigmoid results in much worse predictions)
 # (with relu it does not learn at all)
-model.compile(loss='mean_squared_error', optimizer='adam')
-model.fit(trainX, trainY, epochs=30, batch_size=1, verbose=2)
+model.compile(loss='mean_squared_error', optimizer='sgd')
+num_epochs = 200 # for sgd - 200, for adam - 30
+# hist = model.fit(trainX, trainY, epochs=num_epochs, batch_size=1, verbose=2)
+
+# ==================================================
+# plot learning curve
+X, Y = create_dataset(dataset, look_back)
+X = numpy.reshape(X, (X.shape[0], time_steps, X.shape[1]))
+history = model.fit(X, Y, validation_split=0.33, epochs=num_epochs, batch_size=1, verbose=2)
+# list all data in history
+print(history.history.keys())
+# summarize history for loss
+plt.figure(1)
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+# plt.show()
+# ===================================================
+
 # make predictions
 trainPredict = model.predict(trainX)
 testPredict = model.predict(testX)
@@ -87,19 +107,20 @@ if scale:
     testPredict = scaler.inverse_transform(testPredict)
     testY = scaler.inverse_transform([testY])
 # calculate root mean squared error
-trainScore = math.sqrt(mean_squared_error(trainY[0], trainPredict[:,0]))
+trainScore = math.sqrt(mean_squared_error(trainY[0], trainPredict[:, 0]))
 print('Train Score: %.2f RMSE' % (trainScore))
-testScore = math.sqrt(mean_squared_error(testY[0], testPredict[:,0]))
+testScore = math.sqrt(mean_squared_error(testY[0], testPredict[:, 0]))
 print('Test Score: %.2f RMSE' % (testScore))
 # shift train predictions for plotting
 trainPredictPlot = numpy.empty_like(dataset)
 trainPredictPlot[:, :] = numpy.nan
-trainPredictPlot[look_back:len(trainPredict)+look_back, :] = trainPredict
+trainPredictPlot[look_back:len(trainPredict) + look_back, :] = trainPredict
 # shift test predictions for plotting
 testPredictPlot = numpy.empty_like(dataset)
 testPredictPlot[:, :] = numpy.nan
-testPredictPlot[len(trainPredict)+(look_back*2)+1:len(dataset)-1, :] = testPredict
+testPredictPlot[len(trainPredict) + (look_back * 2) + 1:len(dataset) - 1, :] = testPredict
 # plot baseline and predictions
+plt.figure(2)
 plt.plot(scaler.inverse_transform(dataset), label='Data')
 plt.plot(trainPredictPlot, label='Predictions on training data')
 plt.plot(testPredictPlot, label='Predictions on testing data')
