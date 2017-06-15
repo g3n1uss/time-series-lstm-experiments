@@ -19,4 +19,4 @@ Default scaler ![Default scaler](https://github.com/g3n1uss/time-series-lstm-exp
 Improved scaler ![Improved scaler](https://github.com/g3n1uss/time-series-lstm-experiments/blob/master/pics/LearningCurveMyScaler.png)
 
 ## TODO:
-Fix train/test data separation
+Fix train/test data split
