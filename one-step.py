@@ -24,9 +24,8 @@ def create_dataset(dataset, look_back=1):
         dataY.append(dataset[i + look_back, 0])
     return numpy.array(dataX), numpy.array(dataY)
 
-
 # scale or not
-scale = True  # False gives an error
+scale = 0  # No scaler gives an error
 
 # fix random seed for reproducibility
 numpy.random.seed(7)
@@ -36,7 +35,14 @@ dataset = dataframe.values
 dataset = dataset.astype('float32')
 max_val, max_index = max(dataset), numpy.argmax(dataset)
 
-if scale:
+# define a scaler
+def trans(x, al, be):
+    return 1 / (1 + 1 / al * numpy.exp(be * x))
+
+def inverse_trans(x, al, be):
+    return numpy.log(al*(1-x)/x)/be
+
+if scale==0:
     # they say LSTM works better with normalized data
     # normalize the dataset
     scaler = MinMaxScaler(feature_range=(0, 1))
@@ -44,6 +50,16 @@ if scale:
     scaled_max_val = dataset[max_index]
     # IF WE WORK WITH NORMALIZED DATA, THE LARGEST VALUE PREDICTED BY OUR NN IS LIMITED BY THE LAGEST VELUE IN THE DATASET,
     # IN THIS CASE BY 622
+elif scale==1:
+    min_value = min(dataset)
+    print("Before normalization min is %.2f, max is %.2f" %(min(dataset),max(dataset)))
+    al = 25.8967
+    beta = 0.0130821
+    dataset = 1/(1+1/al*numpy.exp(beta*dataset))
+    print("After normalization min is %.2f, max is %.2f" % (min(dataset), max(dataset)))
+
+# tmp = inverse_trans(trans(dataset, al, beta), al, beta)
+
 
 # split into train and test sets
 print('Data set has %d elements' % len(dataset))
@@ -74,8 +90,8 @@ model.add(LSTM(128))
 model.add(Dense(1))  # output is one number
 # (sigmoid results in much worse predictions)
 # (with relu it does not learn at all)
-model.compile(loss='mean_squared_error', optimizer='sgd')
-num_epochs = 200 # for sgd - 200, for adam - 30
+num_epochs = 50 # for sgd - 200, for adam - 30
+model.compile(loss='mean_squared_error', optimizer='adam')
 # hist = model.fit(trainX, trainY, epochs=num_epochs, batch_size=1, verbose=2)
 
 # ==================================================
@@ -100,12 +116,18 @@ plt.legend(['train', 'test'], loc='upper left')
 trainPredict = model.predict(trainX)
 testPredict = model.predict(testX)
 
-if scale:
+if scale==0:
     # invert predictions
     trainPredict = scaler.inverse_transform(trainPredict)
     trainY = scaler.inverse_transform([trainY])
     testPredict = scaler.inverse_transform(testPredict)
     testY = scaler.inverse_transform([testY])
+elif scale==1:
+    trainPredict = inverse_trans(trainPredict, al, beta)
+    trainY = [inverse_trans(trainY.T, al, beta)]
+    testPredict = inverse_trans(testPredict, al ,beta)
+    testY = [inverse_trans(testY.T, al, beta)]
+
 # calculate root mean squared error
 trainScore = math.sqrt(mean_squared_error(trainY[0], trainPredict[:, 0]))
 print('Train Score: %.2f RMSE' % (trainScore))
@@ -121,7 +143,10 @@ testPredictPlot[:, :] = numpy.nan
 testPredictPlot[len(trainPredict) + (look_back * 2) + 1:len(dataset) - 1, :] = testPredict
 # plot baseline and predictions
 plt.figure(2)
-plt.plot(scaler.inverse_transform(dataset), label='Data')
+if scale==0:
+    plt.plot(scaler.inverse_transform(dataset), label='Data')
+elif scale==1:
+    plt.plot(inverse_trans(dataset, al, beta), label='Data')
 plt.plot(trainPredictPlot, label='Predictions on training data')
 plt.plot(testPredictPlot, label='Predictions on testing data')
 plt.legend()
