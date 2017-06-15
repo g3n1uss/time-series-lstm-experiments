@@ -17,3 +17,6 @@ One way to resolve this problem is to assume that our input `x` has values from 
 Default scaler ![Default scaler](https://github.com/g3n1uss/time-series-lstm-experiments/blob/master/pics/LearningCurveDefaultScaler.png)
 
 Improved scaler ![Improved scaler](https://github.com/g3n1uss/time-series-lstm-experiments/blob/master/pics/LearningCurveMyScaler.png)
+
+## TODO:
+Fix train/test data separation
