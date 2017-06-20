@@ -41,12 +41,13 @@ max_val, max_index = max(dataset), numpy.argmax(dataset)
 def trans(x, al, be):
     return 1 / (1 + 1 / al * numpy.exp(be * x))
 
+# inverse transformation
 def inverse_trans(x, al, be):
     return numpy.log(al*(1-x)/x)/be
 
+# they say LSTM works better with normalized data
+# normalize the dataset
 if scale==0:
-    # they say LSTM works better with normalized data
-    # normalize the dataset
     scaler = MinMaxScaler(feature_range=(0, 1))
     dataset = scaler.fit_transform(dataset)
     scaled_max_val = dataset[max_index]
@@ -57,11 +58,10 @@ elif scale==1:
     print("Before normalization min is %.2f, max is %.2f" %(min(dataset),max(dataset)))
     al, beta = 25.8967, 0.0130821 # gap between train and validation curves depends on these parameters
     # al, beta = 622.142, 0.0183805 # these give a big gap
-    dataset = 1/(1+1/al*numpy.exp(beta*dataset))
+    dataset = trans(dataset, al, beta)
     print("After normalization min is %.2f, max is %.2f" % (min(dataset), max(dataset)))
 
 # tmp = inverse_trans(trans(dataset, al, beta), al, beta)
-
 
 # split into train and test sets
 print('Data set has %d elements' % len(dataset))
@@ -100,7 +100,7 @@ model.compile(loss='mean_squared_error', optimizer='adam')
 # ==================================================
 # plot learning curve
 
-# USING THE ENTIRE DATASET RESULTS IN CLOSER GAP BETWEEN TEST AND TRAIN ERROR FOR MY SCALER
+# USING THE ENTIRE DATASET RESULTS IN A SMALLER GAP BETWEEN TRAIN AND VALIDATION ERROR FOR MY SCALER
 if whole == 1:
     X, Y = create_dataset(dataset, look_back)
     X = numpy.reshape(X, (X.shape[0], time_steps, X.shape[1]))
