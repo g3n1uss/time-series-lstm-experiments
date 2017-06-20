@@ -25,7 +25,9 @@ def create_dataset(dataset, look_back=1):
     return numpy.array(dataX), numpy.array(dataY)
 
 # scale or not
-scale = 0  # No scaler gives an error
+scale = 1  # No scaler gives an error
+# use whole data to train/validate or leave some extra for testing
+whole = 1
 
 # fix random seed for reproducibility
 numpy.random.seed(7)
@@ -53,8 +55,8 @@ if scale==0:
 elif scale==1:
     min_value = min(dataset)
     print("Before normalization min is %.2f, max is %.2f" %(min(dataset),max(dataset)))
-    al = 25.8967
-    beta = 0.0130821
+    al, beta = 25.8967, 0.0130821 # gap between train and validation curves depends on these parameters
+    # al, beta = 622.142, 0.0183805 # these give a big gap
     dataset = 1/(1+1/al*numpy.exp(beta*dataset))
     print("After normalization min is %.2f, max is %.2f" % (min(dataset), max(dataset)))
 
@@ -67,6 +69,7 @@ train_size = int(len(dataset) * 0.67)
 test_size = len(dataset) - train_size
 # THIS SPLIT IS NOT FAIR, IT SHOULD BE DONE RANDOMLY
 # BAD RESULTS FOR LARGER TIMES ARE OBTAINED BECAUSE THE MODEL IS NOT TRAINED ON LARGE VALUES
+# RANDOM SPLIT IS IMPOSSIBLE BECAUSE ORDERING IS IMPORTANT FOR TIME SERIES DATA
 train, test = dataset[0:train_size, :], dataset[train_size:len(dataset), :]
 
 # reshape into X=t and Y=t+1
@@ -96,9 +99,14 @@ model.compile(loss='mean_squared_error', optimizer='adam')
 
 # ==================================================
 # plot learning curve
-X, Y = create_dataset(dataset, look_back)
-X = numpy.reshape(X, (X.shape[0], time_steps, X.shape[1]))
-history = model.fit(X, Y, validation_split=0.33, epochs=num_epochs, batch_size=1, verbose=2)
+
+# USING THE ENTIRE DATASET RESULTS IN CLOSER GAP BETWEEN TEST AND TRAIN ERROR FOR MY SCALER
+if whole == 1:
+    X, Y = create_dataset(dataset, look_back)
+    X = numpy.reshape(X, (X.shape[0], time_steps, X.shape[1]))
+    history = model.fit(X, Y, validation_split=0.33, epochs=num_epochs, batch_size=1, verbose=2)
+else:
+    history = model.fit(trainX, trainY, validation_split=0.33, epochs=num_epochs, batch_size=1, verbose=2)
 # list all data in history
 print(history.history.keys())
 # summarize history for loss
@@ -108,7 +116,7 @@ plt.plot(history.history['val_loss'])
 plt.title('model loss')
 plt.ylabel('loss')
 plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
+plt.legend(['train', 'validation'], loc='upper left')
 # plt.show()
 # ===================================================
 
