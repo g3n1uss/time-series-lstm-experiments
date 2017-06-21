@@ -25,9 +25,15 @@ def create_dataset(dataset, look_back=1):
     return numpy.array(dataX), numpy.array(dataY)
 
 # scale or not
-scale = 1  # No scaler gives an error
+scale = 0  # No scaler gives an error
+# 0 - default scaler from 0 to 1, 1 - my non-linear scale
+
 # use whole data to train/validate or leave some extra for testing
-whole = 1
+whole = 0
+# 1 - use the whole data test, 0 - not
+# USING NOT WHOLE DATASET GIVES BAD RESULTS FOR MY SCALER, DOES NOT MATTER FOR DEFAULT
+
+testTrainSplit = 0.67
 
 # fix random seed for reproducibility
 numpy.random.seed(7)
@@ -51,21 +57,22 @@ if scale==0:
     scaler = MinMaxScaler(feature_range=(0, 1))
     dataset = scaler.fit_transform(dataset)
     scaled_max_val = dataset[max_index]
-    # IF WE WORK WITH NORMALIZED DATA, THE LARGEST VALUE PREDICTED BY OUR NN IS LIMITED BY THE LAGEST VELUE IN THE DATASET,
-    # IN THIS CASE BY 622
+    # IF WORK WITH THIS KIND OF NORMALIZED DATA, THE LARGEST VALUE PREDICTED BY OUR NN IS LIMITED BY THE LAGEST VALUE
+    # IN THE DATASET, IN THIS CASE BY 622
 elif scale==1:
     min_value = min(dataset)
-    print("Before normalization min is %.2f, max is %.2f" %(min(dataset),max(dataset)))
+    print("Before normalization min is %.2f, max is %.2f" %(min(dataset), max(dataset)))
     al, beta = 25.8967, 0.0130821 # gap between train and validation curves depends on these parameters
     # al, beta = 622.142, 0.0183805 # these give a big gap
     dataset = trans(dataset, al, beta)
     print("After normalization min is %.2f, max is %.2f" % (min(dataset), max(dataset)))
 
+# test transformation and its inverse
 # tmp = inverse_trans(trans(dataset, al, beta), al, beta)
 
 # split into train and test sets
 print('Data set has %d elements' % len(dataset))
-train_size = int(len(dataset) * 0.67)
+train_size = int(len(dataset) * testTrainSplit)
 test_size = len(dataset) - train_size
 # THIS SPLIT IS NOT FAIR, IT SHOULD BE DONE RANDOMLY
 # BAD RESULTS FOR LARGER TIMES ARE OBTAINED BECAUSE THE MODEL IS NOT TRAINED ON LARGE VALUES
@@ -91,9 +98,9 @@ model.add(LSTM(32, return_sequences=True, input_shape=(time_steps, look_back)))
 model.add(LSTM(128))
 '''
 model.add(Dense(1))  # output is one number
-# (sigmoid results in much worse predictions)
+# (sigmoid gives much worse predictions)
 # (with relu it does not learn at all)
-num_epochs = 50 # for sgd - 200, for adam - 30
+num_epochs = 50  # for sgd - 200, for adam - 30
 model.compile(loss='mean_squared_error', optimizer='adam')
 # hist = model.fit(trainX, trainY, epochs=num_epochs, batch_size=1, verbose=2)
 
