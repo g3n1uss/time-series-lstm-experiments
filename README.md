@@ -18,5 +18,17 @@ Default scaler ![Default scaler](https://github.com/g3n1uss/time-series-lstm-exp
 
 Improved scaler ![Improved scaler](https://github.com/g3n1uss/time-series-lstm-experiments/blob/master/pics/LearningCurveMyScaler.png)
 
+Some (strange) results:
+
+|  Whole dataset for training | no | yes |
+| --- | --- | ---|
+|  **Scaler**         | **default/mine** | **default/mine** | 
+| Train loss | 0.0017/0.0039 | 0.0033/0.0042 |
+| Validation loss | 0.0045/0.0087 | 0.0107/0.0016 |
+| Train score for normalized data | 0.04/0.07 | 0.05/0.06 |
+| Test score for normalized data | 0.09/0.11 | 0.09/0.06 |
+| Train score for non-normalized data | 22.80/24.73 | 24.06/23.22 |
+| Test score for non-normalized data | 48.67/91.80 | 46.81/51.78 |
+
 ## TODO:
 Fix train/test data split
