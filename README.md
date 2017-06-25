@@ -38,7 +38,7 @@ Some (strange) results.
 | Train score for non-normalized data | 22.80/24.73 | 24.06/23.22 |
 | Test score for non-normalized data | 48.67/91.80 | 46.81/51.78 |
 
-Finally let's plot data/predictions.
+Finally let's plot data/predictions for the tanh scaler.
 
 ![](https://github.com/g3n1uss/time-series-lstm-experiments/blob/master/pics/TanhScaler.png)
 
