@@ -21,6 +21,7 @@ Improved (?) scaler:
 ![Improved scaler](https://github.com/g3n1uss/time-series-lstm-experiments/blob/master/pics/LearningCurveMyScaler.png)
 
 The best (?) scaler (tanh): 
+
 ![Tanh scaler](https://github.com/g3n1uss/time-series-lstm-experiments/blob/master/pics/LearningCurveTanhScaler.png)
 
 Some (strange) results.
