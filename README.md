@@ -20,10 +20,6 @@ Default scaler (min-max):
 Improved (?) scaler: 
 ![Improved scaler](https://github.com/g3n1uss/time-series-lstm-experiments/blob/master/pics/LearningCurveMyScaler.png)
 
-The best (?) scaler (tanh): 
-
-![Tanh scaler](https://github.com/g3n1uss/time-series-lstm-experiments/blob/master/pics/LearningCurveTanhScaler.png)
-
 Some (strange) results.
 
 `testTrainSplit = 0.67, validationSplit = 0.1, num_epochs = 50`. 
@@ -38,7 +34,15 @@ Some (strange) results.
 | Train score for non-normalized data | 22.80/24.73 | 24.06/23.22 |
 | Test score for non-normalized data | 48.67/91.80 | 46.81/51.78 |
 
-Finally let's plot data/predictions for the tanh scaler.
+
+Another scaler (tanh): 
+
+![Tanh scaler](https://github.com/g3n1uss/time-series-lstm-experiments/blob/master/pics/LearningCurveTanhScaler.png)
+
+
+Finally let's plot data/predictions for the default (min-max) and tanh scaler.
+
+![](https://github.com/g3n1uss/time-series-lstm-experiments/blob/master/pics/DefaultScaler.png)
 
 ![](https://github.com/g3n1uss/time-series-lstm-experiments/blob/master/pics/TanhScaler.png)
 
