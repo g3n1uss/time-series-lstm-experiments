@@ -48,12 +48,15 @@ numpy.random.seed(7)
 dataframe = read_csv('international-airline-passengers.csv', usecols=[1], engine='python', skipfooter=3)
 dataset = dataframe.values
 dataset = dataset.astype('float32')
-max_val, max_index = max(dataset), numpy.argmax(dataset)
+# max_val, max_index = max(dataset), numpy.argmax(dataset)
 
 # they say LSTM works better with normalized data
 # normalize the dataset
-scaler = MinMaxScaler(feature_range=(0, 1))
-scaler = TanhScaler(0.9)
+max_value_at = 0.9  # scaler(x_max) = 0.9
+scaler = TanhScaler(max_value_at)
+
+# scaler = MinMaxScaler(feature_range=(0, 1))
+
 print("Before normalization min is %.2f, max is %.2f" %(min(dataset), max(dataset)))
 scaler.fit(dataset)
 dataset = scaler.transform(dataset)
@@ -84,7 +87,7 @@ testX = numpy.reshape(testX, (testX.shape[0], time_steps, testX.shape[1]))
 model = Sequential()
 model.add(LSTM(1, input_shape=(1, look_back)))  # number of hidden units is completely arbitrary
 '''
-# try stacking
+# try stacking (it is useless)
 model.add(LSTM(32, return_sequences=True, input_shape=(time_steps, look_back)))
 model.add(LSTM(128))
 '''

@@ -4,6 +4,8 @@ class NewScaler:
     def __init__(self, params):
         self.params = params
 
+    # Add implementation from one-step.py
+
 
 
 class TanhScaler:
