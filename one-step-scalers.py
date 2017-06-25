@@ -13,6 +13,7 @@ from keras.layers import Dense
 from keras.layers import LSTM
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
+from Scalers import TanhScaler
 
 
 # convert an array of values into a dataset matrix
@@ -49,35 +50,14 @@ dataset = dataframe.values
 dataset = dataset.astype('float32')
 max_val, max_index = max(dataset), numpy.argmax(dataset)
 
-# define a scaler
-def trans(x, al, be):
-    return 1 / (1 + 1 / al * numpy.exp(be * x))
-
-# inverse transformation
-def inverse_trans(x, al, be):
-    return numpy.log(al*(1-x)/x)/be
-
 # they say LSTM works better with normalized data
 # normalize the dataset
-if scale==0:
-    scaler = MinMaxScaler(feature_range=(0, 1))
-    # dataset = scaler.fit_transform(dataset)
-    scaler.fit(dataset)
-    dataset = scaler.transform(dataset)
-    scaled_max_val = dataset[max_index]
-    # IF WORK WITH THIS KIND OF NORMALIZED DATA, THE LARGEST VALUE PREDICTED BY OUR NN IS LIMITED BY THE LAGEST VALUE
-    # IN THE DATASET, IN THIS CASE BY 622
-elif scale==1:
-    print("Before normalization min is %.2f, max is %.2f" %(min(dataset), max(dataset)))
-    al, beta = 25.8967, 0.0130821 # gap between train and validation curves depends on these parameters
-    # al, beta = 622.142, 0.0183805 # these give a big gap
-    # al, beta = 26.0279, 0.0126275 # these give a big gap
-    dataset = trans(dataset, al, beta)
-    print("After normalization min is %.2f, max is %.2f" % (min(dataset), max(dataset)))
-
-
-# test transformation and its inverse
-# tmp = inverse_trans(trans(dataset, al, beta), al, beta)
+scaler = MinMaxScaler(feature_range=(0, 1))
+scaler = TanhScaler(0.9)
+print("Before normalization min is %.2f, max is %.2f" %(min(dataset), max(dataset)))
+scaler.fit(dataset)
+dataset = scaler.transform(dataset)
+print("After normalization min is %.2f, max is %.2f" % (min(dataset), max(dataset)))
 
 # parameter controlling how many steps back we take to predict the next one
 # reshape into X=t and Y=t+1
@@ -149,17 +129,11 @@ print('Train Score for normalized data: %.2f RMSE' % (trainScore))
 testScore = math.sqrt(mean_squared_error(testY, testPredict[:, 0]))
 print('Test Score for normalized data: %.2f RMSE' % (testScore))
 
-if scale==0:
-    # invert predictions
-    trainPredict = scaler.inverse_transform(trainPredict)
-    trainY = scaler.inverse_transform([trainY])
-    testPredict = scaler.inverse_transform(testPredict)
-    testY = scaler.inverse_transform([testY])
-elif scale==1:
-    trainPredict = inverse_trans(trainPredict, al, beta)
-    trainY = [inverse_trans(trainY.T, al, beta)]
-    testPredict = inverse_trans(testPredict, al ,beta)
-    testY = [inverse_trans(testY.T, al, beta)]
+# invert predictions
+trainPredict = scaler.inverse_transform(trainPredict)
+trainY = scaler.inverse_transform([trainY])
+testPredict = scaler.inverse_transform(testPredict)
+testY = scaler.inverse_transform([testY])
 
 # calculate root mean squared error
 trainScore = math.sqrt(mean_squared_error(trainY[0], trainPredict[:, 0]))
@@ -176,10 +150,7 @@ testPredictPlot[:, :] = numpy.nan
 testPredictPlot[len(trainPredict) + (look_back * 2) + 1:len(dataset) - 1, :] = testPredict
 # plot baseline and predictions
 plt.figure(2)
-if scale == 0:
-    plt.plot(scaler.inverse_transform(dataset), label='Data')
-elif scale == 1:
-    plt.plot(inverse_trans(dataset, al, beta), label='Data')
+plt.plot(scaler.inverse_transform(dataset), label='Data')
 plt.plot(trainPredictPlot, label='Predictions on training data')
 plt.plot(testPredictPlot, label='Predictions on testing data')
 plt.legend()
