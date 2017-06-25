@@ -6,7 +6,7 @@ Using LSTM(s) to predict the number of international airline passengers in units
 
 ## Going deeper has no effect
 
-The dataset contains only 144 observations, maybe that is why going deeper or introducing more neurons (memory blocks) does not really affect the results. In fact, when using multiple, recent time steps to make the prediction for the next time step leads to even worse results, which is strange.
+The dataset contains only 144 observations, maybe that is why going deeper or introducing more neurons (memory blocks) does not really affect the results. Another possibility is that the entire dataset can be pretty well approximated by `sin(x) + x` function, which has only few parameters; using 1 LSTM has 12 parameters, which is enough to approximate that function. Another strange result is that when using multiple, recent time steps to make the prediction for the next time step leads to even worse results.
 
 ## Normalization
 ### Concern
