@@ -10,7 +10,8 @@ The dataset contains only 144 observations, maybe that is why going deeper or in
 
 ## Normalization
 ### Concern
-It seems like the default input normalization goes as follows. Consider input vector `x`, find `max(x), min(x)` and rescale `x` by mapping `min(x)->0`, `max(x)->1`. However if new input has bigger/smaller than previous `max(x)/min(x)` value the default normalization scheme would still map this value to `1/0`, which seems to be a problem. 
+It seems like the default (min-max) data normalization goes as follows. Consider input vector `x`, find `max(x), min(x)` and rescale `x` by mapping `min(x)->0`, `max(x)->1`. Now if a new input `x_new > max(x)` this normalization scheme would map `x_new->y`, where `y>1`, which seems to be a problem, because the whole point of normalization is to feed a neural net with values between `0` and `1`.
+
 ### Resolution
 One way to resolve this problem is to assume that our input `x` has values from `0` to `infinity` and transform the data by mapping `0->1`, `infinity->0`. It can be done, for example, by using the function `y=1/(1+1/a exp[b x])`, where `a, b` are parameters and `x` is input as usual. Next we fix `a, b` by specifying the desired separation between `min(x)` and `max(x)`, let's say we choose `y(min(x))=0.01, y(max(x))=7/8` (it turns out the choice of parameters is crucial for reducing the gap between train and validation errors, choosing 0.01 and 0.99 leads to bad results). Using this kind of transformation reduces the gap between training and testing results, which is the goal of any machine learning problem. 
 
