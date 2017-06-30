@@ -55,7 +55,7 @@ dataset = dataset.astype('float32')
 max_value_at = 0.9  # scaler(x_max) = 0.9
 scaler = TanhScaler(max_value_at)
 
-# scaler = MinMaxScaler(feature_range=(0, 1))
+#scaler = MinMaxScaler(feature_range=(0, 1))
 
 print("Before normalization min is %.2f, max is %.2f" %(min(dataset), max(dataset)))
 scaler.fit(dataset)
@@ -96,7 +96,7 @@ model.add(Dense(1))  # output is one number
 # (with relu it does not learn at all)
 print(model.summary())
 
-num_epochs = 50  # for sgd - 200, for adam - 30
+num_epochs = 30  # for sgd - 200, for adam - 30
 model.compile(loss='mean_squared_error', optimizer='adam')
 # hist = model.fit(trainX, trainY, epochs=num_epochs, batch_size=1, verbose=2)
 
